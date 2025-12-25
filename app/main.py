@@ -8,7 +8,7 @@ from app.database import engine, Base
 from app.models import User, Note, Task, Mood
 
 # Импорт роутеров
-from app.api import user, note, task, mood
+from app.api import user, note, task, mood, search, auth
 
 
 @asynccontextmanager
@@ -77,10 +77,12 @@ async def health_check():
 
 
 # Подключение роутеров
+app.include_router(auth.router, prefix=f"{settings.API_V1_STR}")
 app.include_router(user.router, prefix=f"{settings.API_V1_STR}")
 app.include_router(note.router, prefix=f"{settings.API_V1_STR}")
 app.include_router(task.router, prefix=f"{settings.API_V1_STR}")
 app.include_router(mood.router, prefix=f"{settings.API_V1_STR}")
+app.include_router(search.router, prefix=f"{settings.API_V1_STR}")
 
 
 if __name__ == "__main__":

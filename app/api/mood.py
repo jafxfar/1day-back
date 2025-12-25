@@ -1,10 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import date
 from app.database import get_db
 from app.schemas.mood import Mood, MoodCreate, MoodUpdate
 from app.crud import mood as crud_mood
+from pydantic import BaseModel
+
+
+class MoodNotFoundResponse(BaseModel):
+    """
+    Ответ когда запись о настроении не найдена
+    """
+    message: str
+    date: date
 
 router = APIRouter(
     prefix="/moods",
@@ -37,7 +46,7 @@ def read_moods(
     return crud_mood.get_moods(db, user_id=user_id, skip=skip, limit=limit)
 
 
-@router.get("/date/{mood_date}", response_model=Mood)
+@router.get("/date/{mood_date}", response_model=Union[Mood, MoodNotFoundResponse])
 def read_mood_by_date(
     mood_date: date,
     user_id: int,
@@ -48,9 +57,9 @@ def read_mood_by_date(
     """
     db_mood = crud_mood.get_mood_by_date(db, user_id=user_id, mood_date=mood_date)
     if db_mood is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Mood record not found for this date"
+        return MoodNotFoundResponse(
+            message="Настроение на эту дату не было отмечено",
+            date=mood_date
         )
     return db_mood
 

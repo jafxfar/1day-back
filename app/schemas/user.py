@@ -13,8 +13,16 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     """
-    Схема для создания пользователя
+    Схема для создания пользователя (регистрация)
     """
+    password: str = Field(..., min_length=6, max_length=72)
+
+
+class UserLogin(BaseModel):
+    """
+    Схема для входа пользователя
+    """
+    username: str = Field(..., min_length=3, max_length=50)
     password: str = Field(..., min_length=6, max_length=72)
 
 
@@ -44,3 +52,27 @@ class User(UserInDB):
     Схема для возврата пользователя (публичная информация)
     """
     pass
+
+
+class Token(BaseModel):
+    """
+    Схема токена доступа
+    """
+    access_token: str
+    token_type: str = "bearer"
+
+
+class TokenData(BaseModel):
+    """
+    Схема данных токена
+    """
+    user_id: Optional[int] = None
+
+
+class AuthResponse(BaseModel):
+    """
+    Схема ответа после успешной авторизации
+    """
+    access_token: str
+    token_type: str = "bearer"
+    user: User
