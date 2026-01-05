@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from datetime import datetime, date
 from app.models.note import Note
 from app.schemas.note import NoteCreate, NoteUpdate
 
@@ -77,3 +78,17 @@ def search_notes(db: Session, user_id: int, query: str, skip: int = 0, limit: in
         Note.user_id == user_id,
         (Note.title.ilike(search_pattern) | Note.content.ilike(search_pattern))
     ).offset(skip).limit(limit).all()
+
+
+def get_notes_by_date(db: Session, user_id: int, target_date: date) -> List[Note]:
+    """
+    Получить заметки, созданные в определенную дату
+    """
+    start_datetime = datetime.combine(target_date, datetime.min.time())
+    end_datetime = datetime.combine(target_date, datetime.max.time())
+    
+    return db.query(Note).filter(
+        Note.user_id == user_id,
+        Note.created_at >= start_datetime,
+        Note.created_at <= end_datetime
+    ).order_by(Note.created_at.desc()).all()

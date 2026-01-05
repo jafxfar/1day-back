@@ -4,7 +4,10 @@ from typing import List, Optional, Union
 from datetime import date
 from app.database import get_db
 from app.schemas.mood import Mood, MoodCreate, MoodUpdate
+from app.schemas.daily_activity import DailyActivity
 from app.crud import mood as crud_mood
+from app.crud import task as crud_task
+from app.crud import note as crud_note
 from pydantic import BaseModel
 
 
@@ -46,22 +49,53 @@ def read_moods(
     return crud_mood.get_moods(db, user_id=user_id, skip=skip, limit=limit)
 
 
-@router.get("/date/{mood_date}", response_model=Union[Mood, MoodNotFoundResponse])
-def read_mood_by_date(
+@router.get("/today", response_model=Union[Mood, MoodNotFoundResponse])
+def read_today_mood(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Получить настроение пользователя за сегодняшний день
+    """
+    from datetime import date as date_cls
+    today = date_cls.today()
+    db_mood = crud_mood.get_mood_by_date(db, user_id=user_id, mood_date=today)
+    if db_mood is None:
+        return MoodNotFoundResponse(
+            message="Настроение на сегодня еще не отмечено",
+            date=today
+        )
+    return db_mood
+
+
+@router.get("/date/{mood_date}", response_model=DailyActivity)
+def read_daily_activity(
     mood_date: date,
     user_id: int,
     db: Session = Depends(get_db)
 ):
     """
-    Получить запись о настроении за конкретную дату
+    Получить полную активность пользователя за конкретную дату:
+    - Настроение
+    - Задачи
+    - Заметки
     """
+    # Получаем настроение за день
     db_mood = crud_mood.get_mood_by_date(db, user_id=user_id, mood_date=mood_date)
-    if db_mood is None:
-        return MoodNotFoundResponse(
-            message="Настроение на эту дату не было отмечено",
-            date=mood_date
-        )
-    return db_mood
+    
+    # Получаем задачи за день
+    db_tasks = crud_task.get_tasks_by_date(db, user_id=user_id, target_date=mood_date)
+    
+    # Получаем заметки за день
+    db_notes = crud_note.get_notes_by_date(db, user_id=user_id, target_date=mood_date)
+    
+    # Формируем ответ (Pydantic автоматически преобразует ORM модели в схемы)
+    return DailyActivity(
+        date=mood_date,
+        mood=db_mood,
+        tasks=db_tasks,
+        notes=db_notes
+    )
 
 
 @router.get("/month/{year}/{month}", response_model=List[Mood])

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, date
 from app.models.task import Task, TaskStatus
 from app.schemas.task import TaskCreate, TaskUpdate
 
@@ -110,3 +110,17 @@ def mark_task_completed(db: Session, task_id: int, user_id: int) -> Optional[Tas
     db.commit()
     db.refresh(db_task)
     return db_task
+
+
+def get_tasks_by_date(db: Session, user_id: int, target_date: date) -> List[Task]:
+    """
+    Получить задачи, созданные в определенную дату
+    """
+    start_datetime = datetime.combine(target_date, datetime.min.time())
+    end_datetime = datetime.combine(target_date, datetime.max.time())
+    
+    return db.query(Task).filter(
+        Task.user_id == user_id,
+        Task.created_at >= start_datetime,
+        Task.created_at <= end_datetime
+    ).order_by(Task.created_at.desc()).all()
