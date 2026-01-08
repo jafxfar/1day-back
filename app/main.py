@@ -5,10 +5,10 @@ from app.config import settings
 from app.database import engine, Base
 
 # Импорт моделей (необходимо для создания таблиц)
-from app.models import User, Note, Task, Mood
+from app.models import User, Note, Task, Mood, Habit, HabitCompletion
 
 # Импорт роутеров
-from app.api import user, note, task, mood, search, auth
+from app.api import user, note, task, mood, habit, search, auth
 
 
 @asynccontextmanager
@@ -82,6 +82,7 @@ app.include_router(user.router, prefix=f"{settings.API_V1_STR}")
 app.include_router(note.router, prefix=f"{settings.API_V1_STR}")
 app.include_router(task.router, prefix=f"{settings.API_V1_STR}")
 app.include_router(mood.router, prefix=f"{settings.API_V1_STR}")
+app.include_router(habit.router, prefix=f"{settings.API_V1_STR}")
 app.include_router(search.router, prefix=f"{settings.API_V1_STR}")
 
 

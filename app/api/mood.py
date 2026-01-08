@@ -4,10 +4,11 @@ from typing import List, Optional, Union
 from datetime import date
 from app.database import get_db
 from app.schemas.mood import Mood, MoodCreate, MoodUpdate
-from app.schemas.daily_activity import DailyActivity
+from app.schemas.daily_activity import DailyActivity, HabitWithCompletion
 from app.crud import mood as crud_mood
 from app.crud import task as crud_task
 from app.crud import note as crud_note
+from app.crud import habit as crud_habit
 from pydantic import BaseModel
 
 
@@ -79,6 +80,7 @@ def read_daily_activity(
     - Настроение
     - Задачи
     - Заметки
+    - Привычки
     """
     # Получаем настроение за день
     db_mood = crud_mood.get_mood_by_date(db, user_id=user_id, mood_date=mood_date)
@@ -89,12 +91,33 @@ def read_daily_activity(
     # Получаем заметки за день
     db_notes = crud_note.get_notes_by_date(db, user_id=user_id, target_date=mood_date)
     
+    # Получаем привычки за день с информацией о выполнении
+    habits_data = crud_habit.get_habits_for_date(db, user_id=user_id, target_date=mood_date)
+    
+    # Преобразуем в нужный формат
+    habits_list = []
+    for item in habits_data:
+        habit = item["habit"]
+        completion = item["completion"]
+        habits_list.append(HabitWithCompletion(
+            habit_id=habit.id,
+            title=habit.title,
+            description=habit.description,
+            target_time=habit.target_time.isoformat() if habit.target_time else None,
+            duration_minutes=habit.duration_minutes,
+            color=habit.color,
+            is_completed=item["is_completed"],
+            completion_id=completion.id if completion else None,
+            completion_note=completion.note if completion else None
+        ))
+    
     # Формируем ответ (Pydantic автоматически преобразует ORM модели в схемы)
     return DailyActivity(
         date=mood_date,
         mood=db_mood,
         tasks=db_tasks,
-        notes=db_notes
+        notes=db_notes,
+        habits=habits_list
     )
 
 

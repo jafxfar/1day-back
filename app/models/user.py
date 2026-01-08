@@ -22,6 +22,7 @@ class User(Base):
     notes = relationship("Note", back_populates="owner", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="owner", cascade="all, delete-orphan")
     moods = relationship("Mood", back_populates="owner", cascade="all, delete-orphan")
+    habits = relationship("Habit", back_populates="owner", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username})>"
